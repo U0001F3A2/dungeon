@@ -33,16 +33,25 @@ use anyhow::Result;
 async fn main() -> Result<()> {
     dotenvy::dotenv().ok();
 
+    // Bevy frontend takes priority if enabled
+    #[cfg(feature = "bevy")]
+    {
+        run_bevy().await?;
+        return Ok(());
+    }
+
     #[cfg(feature = "cli")]
     {
         run_cli().await?;
+        return Ok(());
     }
 
-    #[cfg(not(feature = "cli"))]
+    #[cfg(not(any(feature = "cli", feature = "bevy")))]
     {
-        compile_error!("At least one frontend feature must be enabled (cli, gui, etc.)");
+        compile_error!("At least one frontend feature must be enabled (cli, bevy, etc.)");
     }
 
+    #[allow(unreachable_code)]
     Ok(())
 }
 
@@ -204,6 +213,57 @@ async fn run_cli() -> Result<()> {
     let client = builder.build()?;
 
     tracing::info!("Client assembled, starting...");
+    client.run().await?;
+
+    tracing::info!("Client shutdown complete");
+    Ok(())
+}
+
+/// Run the Bevy frontend.
+#[cfg(feature = "bevy")]
+async fn run_bevy() -> Result<()> {
+    use client_bootstrap::{RuntimeBuilder, RuntimeConfig};
+    use client_frontend_bevy::BevyFrontend;
+    use client_frontend_core::FrontendConfig;
+    use dungeon_client::Client;
+    use tracing_subscriber::layer::SubscriberExt;
+    use tracing_subscriber::util::SubscriberInitExt;
+
+    // 1. Setup logging (simple file-based logging for Bevy)
+    let env_filter = tracing_subscriber::EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info"));
+
+    tracing_subscriber::registry()
+        .with(env_filter)
+        .with(tracing_subscriber::fmt::layer())
+        .init();
+
+    tracing::info!("Starting Dungeon with Bevy frontend");
+
+    // 2. Load configuration from environment
+    let runtime_config = RuntimeConfig::from_env();
+    let frontend_config = FrontendConfig::from_env();
+
+    tracing::info!("ZK proving: {}", runtime_config.enable_proving);
+    tracing::info!("Persistence: {}", runtime_config.enable_persistence);
+
+    // 3. Build Runtime
+    tracing::debug!("Building runtime...");
+    let setup = RuntimeBuilder::new().config(runtime_config).build().await?;
+
+    tracing::info!("Runtime built successfully");
+
+    // 4. Build Bevy Frontend
+    tracing::debug!("Building Bevy frontend...");
+    let frontend = BevyFrontend::new(frontend_config, setup.oracles.clone());
+
+    // 5. Build Client
+    let client = Client::builder()
+        .runtime(setup.runtime)
+        .frontend(frontend)
+        .build()?;
+
+    tracing::info!("Client assembled, starting Bevy...");
     client.run().await?;
 
     tracing::info!("Client shutdown complete");

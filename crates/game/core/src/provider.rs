@@ -72,6 +72,9 @@ pub enum InteractiveKind {
     /// Local CLI keyboard input
     CliInput,
 
+    /// Bevy graphical input
+    BevyInput,
+
     /// Network/remote player input
     NetworkInput,
 
@@ -112,6 +115,7 @@ impl fmt::Display for InteractiveKind {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match self {
             Self::CliInput => "cli",
+            Self::BevyInput => "bevy",
             Self::NetworkInput => "network",
             Self::Replay => "replay",
         };

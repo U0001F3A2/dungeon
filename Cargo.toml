@@ -10,6 +10,7 @@ members = [
     "crates/client/bootstrap",
     "crates/client/frontend/core",
     "crates/client/frontend/cli",
+    "crates/client/frontend/bevy",
     "crates/client/blockchain/sui",
 
     "crates/xtask",
@@ -38,6 +39,7 @@ zk = { path = "crates/zk", default-features = false }
 client-bootstrap = { path = "crates/client/bootstrap", default-features = false }
 client-frontend-core = { path = "crates/client/frontend/core", default-features = false }
 client-frontend-cli = { path = "crates/client/frontend/cli", default-features = false }
+client-frontend-bevy = { path = "crates/client/frontend/bevy", default-features = false }
 client-blockchain-sui = { path = "crates/client/blockchain/sui", default-features = false }
 
 # ----------------------------------------------------------------------------
@@ -103,6 +105,11 @@ sp1-verifier = "5.2"
 # ----------------------------------------------------------------------------
 ratatui = "0.29"
 crossterm = { version = "0.29", features = ["event-stream"] }
+
+# ----------------------------------------------------------------------------
+# Game Engine (Bevy frontend)
+# ----------------------------------------------------------------------------
+bevy = { version = "0.15", default-features = false }
 
 # ----------------------------------------------------------------------------
 # Utilities

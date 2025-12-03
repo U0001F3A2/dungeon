@@ -136,7 +136,7 @@ build *features:
     for feat in "$@"; do
         case "$feat" in
             risc0|sp1|stub|arkworks) backend="$feat" ;;
-            cli|gui) frontend="$feat" ;;
+            cli|bevy|gui) frontend="$feat" ;;
             sui|ethereum) blockchain="$feat" ;;
             *) other_features+=("$feat") ;;
         esac
@@ -189,7 +189,7 @@ build-release *features:
     for feat in "$@"; do
         case "$feat" in
             risc0|sp1|stub|arkworks) backend="$feat" ;;
-            cli|gui) frontend="$feat" ;;
+            cli|bevy|gui) frontend="$feat" ;;
             sui|ethereum) blockchain="$feat" ;;
             *) other_features+=("$feat") ;;
         esac
@@ -262,7 +262,7 @@ run *features:
                 fi
                 backend="$feat"
                 ;;
-            cli|gui)
+            cli|bevy|gui)
                 if [ -n "$frontend" ]; then
                     echo "❌ Error: Multiple frontends specified: $frontend and $feat"
                     exit 1
@@ -341,7 +341,7 @@ run-release *features:
             risc0|sp1|stub|arkworks)
                 backend="$feat"
                 ;;
-            cli|gui)
+            cli|bevy|gui)
                 frontend="$feat"
                 ;;
             sui|ethereum)
@@ -399,7 +399,7 @@ test *features:
     for feat in "$@"; do
         case "$feat" in
             risc0|sp1|stub|arkworks) backend="$feat" ;;
-            cli|gui) frontend="$feat" ;;
+            cli|bevy|gui) frontend="$feat" ;;
             sui|ethereum) blockchain="$feat" ;;
             *) other_features+=("$feat") ;;
         esac
@@ -451,7 +451,7 @@ test-integration *features:
     for feat in "$@"; do
         case "$feat" in
             risc0|sp1|stub|arkworks) backend="$feat" ;;
-            cli|gui) frontend="$feat" ;;
+            cli|bevy|gui) frontend="$feat" ;;
             sui|ethereum) blockchain="$feat" ;;
         esac
     done
@@ -490,7 +490,7 @@ test-lib *features:
     for feat in "$@"; do
         case "$feat" in
             risc0|sp1|stub|arkworks) backend="$feat" ;;
-            cli|gui) frontend="$feat" ;;
+            cli|bevy|gui) frontend="$feat" ;;
             sui|ethereum) blockchain="$feat" ;;
         esac
     done
@@ -529,7 +529,7 @@ test-verbose *features:
     for feat in "$@"; do
         case "$feat" in
             risc0|sp1|stub|arkworks) backend="$feat" ;;
-            cli|gui) frontend="$feat" ;;
+            cli|bevy|gui) frontend="$feat" ;;
             sui|ethereum) blockchain="$feat" ;;
         esac
     done
@@ -596,7 +596,7 @@ lint *features:
     for feat in "$@"; do
         case "$feat" in
             risc0|sp1|stub|arkworks) backend="$feat" ;;
-            cli|gui) frontend="$feat" ;;
+            cli|bevy|gui) frontend="$feat" ;;
             sui|ethereum) blockchain="$feat" ;;
             *) other_features+=("$feat") ;;
         esac
@@ -645,7 +645,7 @@ lint-fix *features:
     for feat in "$@"; do
         case "$feat" in
             risc0|sp1|stub|arkworks) backend="$feat" ;;
-            cli|gui) frontend="$feat" ;;
+            cli|bevy|gui) frontend="$feat" ;;
             sui|ethereum) blockchain="$feat" ;;
             *) other_features+=("$feat") ;;
         esac
