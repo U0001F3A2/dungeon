@@ -2,6 +2,7 @@
 
 use bevy::prelude::*;
 
+use crate::assets::SpriteAssets;
 use crate::components::{Actor, MainCamera, Npc, Player};
 use crate::resources::{CameraConfig, GameViewModel, TileSize};
 
@@ -10,10 +11,15 @@ pub fn spawn_actors(
     mut commands: Commands,
     view_model: Option<Res<GameViewModel>>,
     tile_size: Res<TileSize>,
+    sprites: Option<Res<SpriteAssets>>,
     existing_actors: Query<Entity, With<Actor>>,
     mut actors_spawned: Local<bool>,
 ) {
     let Some(view_model) = view_model else {
+        return;
+    };
+
+    let Some(sprites) = sprites else {
         return;
     };
 
@@ -44,16 +50,17 @@ pub fn spawn_actors(
         let world_x = pos.x as f32 * tile_px + offset_x;
         let world_y = pos.y as f32 * tile_px + offset_y;
 
-        let (color, size) = if actor.is_player {
-            (Color::srgb(0.2, 0.8, 0.3), tile_px * 0.8)
+        // Get sprite texture based on actor type
+        let texture = if actor.is_player {
+            sprites.player_sprite()
         } else {
-            (Color::srgb(0.8, 0.2, 0.2), tile_px * 0.6)
+            sprites.npc_sprite(actor.id.0)
         };
 
         let mut entity_commands = commands.spawn((
             Sprite {
-                color,
-                custom_size: Some(Vec2::splat(size)),
+                image: texture,
+                custom_size: Some(Vec2::splat(tile_px)),
                 ..default()
             },
             Transform::from_xyz(world_x, world_y, 1.0), // Z = 1 to render above tiles
@@ -70,7 +77,7 @@ pub fn spawn_actors(
     }
 
     *actors_spawned = true;
-    tracing::info!("Spawned {} actors", view_model.0.actors.len());
+    tracing::info!("Spawned {} actors with sprites", view_model.0.actors.len());
 }
 
 /// Update actor positions when the view model changes.

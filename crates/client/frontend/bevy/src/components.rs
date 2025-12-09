@@ -68,3 +68,11 @@ pub struct TurnText;
 pub struct MessageEntry {
     pub index: usize,
 }
+
+/// Marker component for help panel.
+#[derive(Component)]
+pub struct HelpPanel;
+
+/// Marker component for input mode text.
+#[derive(Component)]
+pub struct InputModeText;

@@ -5,7 +5,9 @@
 //! using the shared `ViewModel` from `client-frontend-core`.
 
 mod app;
+mod assets;
 mod components;
+mod cursor;
 mod events;
 mod input;
 mod provider;
@@ -14,4 +16,6 @@ mod resources;
 mod ui;
 
 pub use app::BevyFrontend;
+pub use assets::SpriteAssets;
+pub use cursor::{CursorPlugin, CursorState};
 pub use provider::BevyActionProvider;

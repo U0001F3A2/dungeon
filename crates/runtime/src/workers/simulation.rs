@@ -466,22 +466,38 @@ impl SimulationWorker {
             }
         };
 
-        if phase == TransitionPhase::PreValidate {
-            debug!(
-                target: "runtime::worker",
-                action = ?action,
-                phase = phase.as_str(),
-                error = %message,
-                "Action rejected during pre-validate"
-            );
-        } else {
-            error!(
-                target: "runtime::worker",
-                action = ?action,
-                phase = phase.as_str(),
-                error = %message,
-                "Action execution failed"
-            );
+        // Log at appropriate level based on phase
+        // Pre-validate failures are expected (e.g., trying to move into walls)
+        // Apply phase failures during normal gameplay are also common for NPCs
+        match phase {
+            TransitionPhase::PreValidate => {
+                debug!(
+                    target: "runtime::worker",
+                    action = ?action,
+                    phase = phase.as_str(),
+                    error = %message,
+                    "Action rejected during pre-validate"
+                );
+            }
+            TransitionPhase::Apply => {
+                // NPC movement failures are common and not errors
+                debug!(
+                    target: "runtime::worker",
+                    action = ?action,
+                    phase = phase.as_str(),
+                    error = %message,
+                    "Action failed during apply"
+                );
+            }
+            TransitionPhase::PostValidate => {
+                warn!(
+                    target: "runtime::worker",
+                    action = ?action,
+                    phase = phase.as_str(),
+                    error = %message,
+                    "Action failed post-validate (state may be inconsistent)"
+                );
+            }
         }
 
         // Publish ActionFailed event to GameState topic

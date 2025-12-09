@@ -1,8 +1,8 @@
 //! Tile rendering systems.
 
 use bevy::prelude::*;
-use game_core::env::TerrainKind;
 
+use crate::assets::SpriteAssets;
 use crate::components::Tile;
 use crate::resources::{GameViewModel, TileSize};
 
@@ -15,10 +15,15 @@ pub fn spawn_tiles(
     mut commands: Commands,
     view_model: Option<Res<GameViewModel>>,
     tile_size: Res<TileSize>,
+    sprites: Option<Res<SpriteAssets>>,
     mut tiles_spawned: Local<bool>,
     existing_tiles: Query<Entity, With<Tile>>,
 ) {
     let Some(view_model) = view_model else {
+        return;
+    };
+
+    let Some(sprites) = sprites else {
         return;
     };
 
@@ -43,7 +48,7 @@ pub fn spawn_tiles(
 
     for (row_idx, row) in map.tiles.iter().enumerate() {
         for (col_idx, tile_view) in row.iter().enumerate() {
-            let color = terrain_color(tile_view.terrain);
+            let texture = sprites.tile_sprite(tile_view.terrain);
 
             // Convert grid position to world position
             // Note: tiles are stored in Y-reversed order (top row first)
@@ -52,8 +57,8 @@ pub fn spawn_tiles(
 
             commands.spawn((
                 Sprite {
-                    color,
-                    custom_size: Some(Vec2::splat(tile_px - 1.0)), // Small gap between tiles
+                    image: texture,
+                    custom_size: Some(Vec2::splat(tile_px)),
                     ..default()
                 },
                 Transform::from_xyz(world_x, world_y, 0.0),
@@ -65,16 +70,5 @@ pub fn spawn_tiles(
     }
 
     *tiles_spawned = true;
-    tracing::info!("Spawned {} tiles", map.width * map.height);
-}
-
-/// Get color for terrain type.
-fn terrain_color(terrain: TerrainKind) -> Color {
-    match terrain {
-        TerrainKind::Floor => Color::srgb(0.3, 0.3, 0.35),
-        TerrainKind::Wall => Color::srgb(0.5, 0.4, 0.3),
-        TerrainKind::Void => Color::srgb(0.05, 0.05, 0.1),
-        TerrainKind::Water => Color::srgb(0.2, 0.4, 0.8),
-        TerrainKind::Custom(_) => Color::srgb(0.6, 0.2, 0.6),
-    }
+    tracing::info!("Spawned {} tiles with sprites", map.width * map.height);
 }

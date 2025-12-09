@@ -4,6 +4,7 @@
 
 use anyhow::Result;
 use async_trait::async_trait;
+use bevy::asset::AssetPlugin;
 use bevy::prelude::*;
 use client_bootstrap::oracles::OracleBundle;
 use client_frontend_core::view_model::ViewModel;
@@ -13,6 +14,7 @@ use runtime::{InteractiveKind, ProviderKind, RuntimeHandle, Topic};
 use std::sync::Arc;
 use tokio::sync::mpsc;
 
+use crate::cursor::CursorPlugin;
 use crate::events::{RuntimeEventReceivers, RuntimeEventsPlugin};
 use crate::input::InputPlugin;
 use crate::provider::BevyActionProvider;
@@ -90,14 +92,22 @@ impl client_frontend_core::Frontend for BevyFrontend {
         // Note: Bevy's App::run() takes ownership and doesn't return
         // We run it in a blocking context since Bevy needs the main thread
         App::new()
-            .add_plugins(DefaultPlugins.set(WindowPlugin {
-                primary_window: Some(Window {
-                    title: "Dungeon".to_string(),
-                    resolution: (1280.0, 720.0).into(),
-                    ..default()
-                }),
-                ..default()
-            }))
+            .add_plugins(
+                DefaultPlugins
+                    .set(WindowPlugin {
+                        primary_window: Some(Window {
+                            title: "Dungeon".to_string(),
+                            resolution: (1280.0, 720.0).into(),
+                            ..default()
+                        }),
+                        ..default()
+                    })
+                    .set(AssetPlugin {
+                        // Use workspace root assets directory (resolved at compile time)
+                        file_path: concat!(env!("CARGO_MANIFEST_DIR"), "/../../../../assets").to_string(),
+                        ..default()
+                    }),
+            )
             // Insert resources
             .insert_resource(game_view_model)
             .insert_resource(game_message_log)
@@ -112,6 +122,7 @@ impl client_frontend_core::Frontend for BevyFrontend {
             .add_plugins(RenderingPlugin)
             .add_plugins(UiPlugin)
             .add_plugins(InputPlugin)
+            .add_plugins(CursorPlugin)
             .add_plugins(RuntimeEventsPlugin)
             // Run
             .run();

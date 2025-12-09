@@ -1,6 +1,6 @@
 //! Generates all possible action candidates from available actions.
 
-use game_core::{ActionInput, ActionKind, CardinalDirection, EntityId};
+use game_core::{ActionInput, ActionKind, CardinalDirection, EntityId, Position};
 use tracing::debug;
 
 use super::AiContext;
@@ -79,13 +79,21 @@ impl ActionCandidateGenerator {
                 }
 
                 game_core::TargetingMode::Directional { range, width } => {
-                    // Generate candidates for all 8 cardinal directions
-                    for dir in CardinalDirection::all() {
+                    // For movement actions, only generate valid (walkable) directions
+                    let valid_dirs = if kind == ActionKind::Move {
+                        Self::find_walkable_directions(ctx)
+                    } else {
+                        // For other directional actions (attacks), generate all directions
+                        CardinalDirection::all().to_vec()
+                    };
+
+                    for dir in valid_dirs {
                         candidates.push((kind, ActionInput::Direction(dir)));
                     }
 
                     tracing::trace!(
-                        "Generated 8 directional candidates for {:?} (range={}, width={:?})",
+                        "Generated {} directional candidates for {:?} (range={}, width={:?})",
+                        candidates.len(),
                         kind,
                         range,
                         width
@@ -101,6 +109,55 @@ impl ActionCandidateGenerator {
         );
 
         candidates
+    }
+
+    /// Finds all walkable directions from the actor's current position.
+    ///
+    /// This checks the map to see which adjacent tiles are passable,
+    /// preventing the AI from trying to move into walls.
+    fn find_walkable_directions(ctx: &AiContext) -> Vec<CardinalDirection> {
+        let actor_pos = match ctx.state.entities.actor(ctx.entity) {
+            Some(a) => match a.position {
+                Some(pos) => pos,
+                None => return Vec::new(),
+            },
+            None => return Vec::new(),
+        };
+
+        let map = match ctx.env.map() {
+            Ok(m) => m,
+            Err(_) => return CardinalDirection::all().to_vec(),
+        };
+
+        let mut walkable = Vec::new();
+
+        for dir in CardinalDirection::all() {
+            let (dx, dy) = dir.offset();
+            let new_x = actor_pos.x + dx;
+            let new_y = actor_pos.y + dy;
+
+            // Check bounds (map uses non-negative coordinates)
+            if new_x < 0 || new_y < 0 {
+                continue;
+            }
+
+            let target_pos = Position { x: new_x, y: new_y };
+
+            // Check if tile is walkable
+            if let Some(tile) = map.tile(target_pos) {
+                if tile.terrain().is_passable() {
+                    // Also check if not occupied by another actor
+                    let occupied = ctx.state.entities.actors.iter().any(|a| {
+                        a.id != ctx.entity && a.position == Some(target_pos)
+                    });
+                    if !occupied {
+                        walkable.push(dir);
+                    }
+                }
+            }
+        }
+
+        walkable
     }
 
     /// Finds all valid target entities within range.

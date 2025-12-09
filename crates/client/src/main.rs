@@ -75,6 +75,8 @@ async fn run_cli() -> Result<()> {
 
         // Initialize terminal for start screen
         let mut terminal = terminal::init()?;
+        // Guard ensures terminal is restored even on early returns/panics
+        let _guard = terminal::TerminalGuard;
 
         // List existing sessions
         let save_dir = runtime_config
@@ -86,7 +88,7 @@ async fn run_cli() -> Result<()> {
         // Show start screen
         let choice = show_start_screen(&mut terminal, &sessions)?;
 
-        // Restore terminal before continuing (must be done before scope ends)
+        // Restore terminal before continuing (guard will also restore on drop)
         terminal::restore()?;
 
         match choice {
