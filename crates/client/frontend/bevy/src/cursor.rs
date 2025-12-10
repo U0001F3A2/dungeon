@@ -57,16 +57,6 @@ impl CursorState {
         self.position = Position::new(new_x, new_y);
     }
 
-    /// Toggle visibility and optionally reset to player position.
-    pub fn toggle(&mut self, player_pos: Option<Position>) {
-        self.visible = !self.visible;
-        if self.visible {
-            if let Some(pos) = player_pos {
-                self.position = pos;
-            }
-        }
-    }
-
     /// Get entity at cursor position from view model.
     pub fn get_entity_at_cursor<'a>(
         &self,

@@ -29,17 +29,6 @@ pub const TEXT_FONT_SIZE: f32 = 16.0;
 /// Font size for small text.
 pub const SMALL_FONT_SIZE: f32 = 14.0;
 
-/// Create a panel node style.
-pub fn panel_style() -> Node {
-    Node {
-        padding: UiRect::all(Val::Px(10.0)),
-        margin: UiRect::all(Val::Px(5.0)),
-        flex_direction: FlexDirection::Column,
-        row_gap: Val::Px(5.0),
-        ..default()
-    }
-}
-
 /// Create a text style with the given size and color.
 pub fn text_style(size: f32, color: Color) -> (TextFont, TextColor) {
     (

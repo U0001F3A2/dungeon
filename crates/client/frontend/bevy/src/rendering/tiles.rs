@@ -6,10 +6,6 @@ use crate::assets::SpriteAssets;
 use crate::components::Tile;
 use crate::resources::{GameViewModel, TileSize};
 
-/// Marker to track if tiles have been spawned.
-#[derive(Resource, Default)]
-pub struct TilesSpawned(pub bool);
-
 /// Spawn tile sprites from the view model.
 pub fn spawn_tiles(
     mut commands: Commands,

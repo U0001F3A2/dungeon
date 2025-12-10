@@ -21,11 +21,15 @@ pub struct GameMessageLog(pub MessageLog);
 pub struct ActionSender(pub mpsc::Sender<Action>);
 
 /// Runtime handle for querying state and subscribing to events.
+/// Reserved for future use (e.g., querying state mid-game).
 #[derive(Resource)]
+#[allow(dead_code)]
 pub struct GameRuntimeHandle(pub RuntimeHandle);
 
 /// Frontend configuration.
+/// Reserved for future use (e.g., configurable message limits).
 #[derive(Resource)]
+#[allow(dead_code)]
 pub struct GameFrontendConfig(pub FrontendConfig);
 
 /// Tile size in pixels for rendering.
@@ -39,7 +43,9 @@ impl Default for TileSize {
 }
 
 /// Camera configuration.
+/// Reserved for future use (e.g., zoom controls, camera following).
 #[derive(Resource)]
+#[allow(dead_code)]
 pub struct CameraConfig {
     pub zoom: f32,
     pub follow_player: bool,

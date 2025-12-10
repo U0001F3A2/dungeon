@@ -4,7 +4,9 @@ use bevy::prelude::*;
 use game_core::{EntityId, Position};
 
 /// Marker component for tile sprites.
+/// Position is stored for potential future use (e.g., tile click detection).
 #[derive(Component)]
+#[allow(dead_code)]
 pub struct Tile {
     pub position: Position,
 }
