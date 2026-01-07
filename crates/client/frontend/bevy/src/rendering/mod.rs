@@ -40,5 +40,5 @@ impl Plugin for RenderingPlugin {
 fn setup_camera(mut commands: Commands) {
     use crate::components::MainCamera;
 
-    commands.spawn((Camera2d::default(), MainCamera));
+    commands.spawn((Camera2d, MainCamera));
 }

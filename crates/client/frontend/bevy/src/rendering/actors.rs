@@ -103,19 +103,18 @@ pub fn update_actor_positions(
     let offset_y = -map_height / 2.0 + tile_px / 2.0;
 
     for (actor_component, mut transform) in actors.iter_mut() {
-        // Find the actor in the view model
-        if let Some(actor_view) = view_model
+        // Find the actor in the view model and get its position
+        if let Some(pos) = view_model
             .0
             .actors
             .iter()
             .find(|a| a.id == actor_component.entity_id)
+            .and_then(|a| a.position)
         {
-            if let Some(pos) = actor_view.position {
-                let world_x = pos.x as f32 * tile_px + offset_x;
-                let world_y = pos.y as f32 * tile_px + offset_y;
-                transform.translation.x = world_x;
-                transform.translation.y = world_y;
-            }
+            let world_x = pos.x as f32 * tile_px + offset_x;
+            let world_y = pos.y as f32 * tile_px + offset_y;
+            transform.translation.x = world_x;
+            transform.translation.y = world_y;
         }
     }
 }

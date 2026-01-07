@@ -1,15 +1,15 @@
-//! UI panel systems for stats and message log.
+//! UI panel systems for stats, message log, and hover inspection.
 
 use bevy::prelude::*;
 use game_core::env::MapOracle;
 
 use crate::components::{HealthText, HelpPanel, InputModeText, ManaText, MessageEntry, MessageLogPanel, StatsPanel, TurnText, UiRoot};
-use crate::cursor::CursorState;
+use crate::cursor::{HoverState, HoverTarget};
 use crate::input::{InputMode, ShowHelp};
 use crate::resources::{GameMessageLog, GameViewModel, OracleBundle};
 use super::styles::*;
 
-/// Marker component for examine panel.
+/// Marker component for examine panel (shown on mouse hover).
 #[derive(Component)]
 pub struct ExaminePanel;
 
@@ -114,7 +114,7 @@ fn spawn_stats_panel(parent: &mut ChildBuilder) {
             });
 
             panel.spawn((
-                Text::new("H - Help | X - Examine"),
+                Text::new("H - Help"),
                 text_style(SMALL_FONT_SIZE, TEXT_COLOR).0,
                 text_style(SMALL_FONT_SIZE, TEXT_COLOR).1,
             ));
@@ -160,7 +160,7 @@ fn spawn_right_column(parent: &mut ChildBuilder) {
             ..default()
         })
         .with_children(|column| {
-            // Top: Examine panel (hidden by default)
+            // Top: Examine panel (shown on mouse hover)
             spawn_examine_panel(column);
 
             // Bottom: Message log
@@ -172,7 +172,7 @@ fn spawn_examine_panel(parent: &mut ChildBuilder) {
     parent
         .spawn((
             Node {
-                width: Val::Px(280.0),
+                width: Val::Px(250.0),
                 height: Val::Auto,
                 padding: UiRect::all(Val::Px(10.0)),
                 margin: UiRect::all(Val::Px(10.0)),
@@ -188,13 +188,13 @@ fn spawn_examine_panel(parent: &mut ChildBuilder) {
         .with_children(|panel| {
             // Title
             panel.spawn((
-                Text::new("Examine"),
+                Text::new("Inspect"),
                 text_style(HEADER_FONT_SIZE, Color::srgb(0.5, 0.8, 1.0)).0,
                 text_style(HEADER_FONT_SIZE, Color::srgb(0.5, 0.8, 1.0)).1,
             ));
 
-            // 8 lines for examine info
-            for i in 0..8 {
+            // 6 lines for examine info
+            for i in 0..6 {
                 panel.spawn((
                     Text::new(""),
                     text_style(SMALL_FONT_SIZE, TEXT_COLOR).0,
@@ -249,10 +249,10 @@ fn spawn_help_panel(commands: &mut Commands) {
                 position_type: PositionType::Absolute,
                 left: Val::Percent(50.0),
                 top: Val::Percent(50.0),
-                width: Val::Px(350.0),
+                width: Val::Px(300.0),
                 padding: UiRect::all(Val::Px(20.0)),
                 flex_direction: FlexDirection::Column,
-                row_gap: Val::Px(10.0),
+                row_gap: Val::Px(8.0),
                 ..default()
             },
             BackgroundColor(Color::srgba(0.1, 0.1, 0.15, 0.95)),
@@ -275,7 +275,7 @@ fn spawn_help_panel(commands: &mut Commands) {
                 text_style(TEXT_FONT_SIZE, Color::srgb(0.7, 0.9, 1.0)).1,
             ));
             panel.spawn((
-                Text::new("  Arrow Keys - Move/Cursor"),
+                Text::new("  Arrow Keys - Move"),
                 text_style(SMALL_FONT_SIZE, TEXT_COLOR).0,
                 text_style(SMALL_FONT_SIZE, TEXT_COLOR).1,
             ));
@@ -287,41 +287,31 @@ fn spawn_help_panel(commands: &mut Commands) {
                 text_style(TEXT_FONT_SIZE, Color::srgb(0.7, 0.9, 1.0)).1,
             ));
             panel.spawn((
-                Text::new("  A - Attack Mode"),
+                Text::new("  A - Attack (select target)"),
                 text_style(SMALL_FONT_SIZE, TEXT_COLOR).0,
                 text_style(SMALL_FONT_SIZE, TEXT_COLOR).1,
             ));
             panel.spawn((
-                Text::new("    (Select target, Enter)"),
-                text_style(SMALL_FONT_SIZE, Color::srgb(0.6, 0.6, 0.6)).0,
-                text_style(SMALL_FONT_SIZE, Color::srgb(0.6, 0.6, 0.6)).1,
-            ));
-            panel.spawn((
-                Text::new("  G + Arrow - Pickup"),
+                Text::new("  G + Arrow - Pickup item"),
                 text_style(SMALL_FONT_SIZE, TEXT_COLOR).0,
                 text_style(SMALL_FONT_SIZE, TEXT_COLOR).1,
             ));
             panel.spawn((
-                Text::new("  . - Wait"),
+                Text::new("  Space/. - Wait"),
                 text_style(SMALL_FONT_SIZE, TEXT_COLOR).0,
                 text_style(SMALL_FONT_SIZE, TEXT_COLOR).1,
             ));
 
-            // Examine section
+            // Mouse section
             panel.spawn((
-                Text::new("Examine"),
+                Text::new("Mouse"),
                 text_style(TEXT_FONT_SIZE, Color::srgb(0.7, 0.9, 1.0)).0,
                 text_style(TEXT_FONT_SIZE, Color::srgb(0.7, 0.9, 1.0)).1,
             ));
             panel.spawn((
-                Text::new("  X - Toggle Examine Mode"),
+                Text::new("  Hover - Inspect tile"),
                 text_style(SMALL_FONT_SIZE, TEXT_COLOR).0,
                 text_style(SMALL_FONT_SIZE, TEXT_COLOR).1,
-            ));
-            panel.spawn((
-                Text::new("  (Use arrows to move cursor)"),
-                text_style(SMALL_FONT_SIZE, Color::srgb(0.6, 0.6, 0.6)).0,
-                text_style(SMALL_FONT_SIZE, Color::srgb(0.6, 0.6, 0.6)).1,
             ));
 
             // Other section
@@ -331,19 +321,19 @@ fn spawn_help_panel(commands: &mut Commands) {
                 text_style(TEXT_FONT_SIZE, Color::srgb(0.7, 0.9, 1.0)).1,
             ));
             panel.spawn((
-                Text::new("  H/F1 - Toggle Help"),
+                Text::new("  H/F1 - Toggle help"),
                 text_style(SMALL_FONT_SIZE, TEXT_COLOR).0,
                 text_style(SMALL_FONT_SIZE, TEXT_COLOR).1,
             ));
             panel.spawn((
-                Text::new("  Esc - Cancel Mode"),
+                Text::new("  Esc - Cancel"),
                 text_style(SMALL_FONT_SIZE, TEXT_COLOR).0,
                 text_style(SMALL_FONT_SIZE, TEXT_COLOR).1,
             ));
 
             // Close hint
             panel.spawn(Node {
-                height: Val::Px(10.0),
+                height: Val::Px(8.0),
                 ..default()
             });
             panel.spawn((
@@ -355,6 +345,7 @@ fn spawn_help_panel(commands: &mut Commands) {
 }
 
 /// Update the stats panel with current player info.
+#[allow(clippy::type_complexity)]
 pub fn update_stats_panel(
     view_model: Option<Res<GameViewModel>>,
     mut health_text: Query<&mut Text, (With<HealthText>, Without<ManaText>, Without<TurnText>)>,
@@ -412,7 +403,6 @@ pub fn update_input_mode(
             InputMode::Normal => ("MOVE", Color::srgb(0.0, 1.0, 0.0)),
             InputMode::Attack => ("ATTACK", Color::srgb(1.0, 0.3, 0.3)),
             InputMode::Pickup => ("PICKUP", Color::srgb(0.3, 0.7, 1.0)),
-            InputMode::Examine => ("EXAMINE", Color::srgb(1.0, 1.0, 0.0)),
         };
         **text = label.to_string();
         color.0 = new_color;
@@ -433,27 +423,25 @@ pub fn update_help_visibility(
     }
 }
 
-/// Update examine panel visibility and content.
+/// Update examine panel based on mouse hover.
 pub fn update_examine_panel(
-    input_mode: Res<InputMode>,
-    cursor_state: Res<CursorState>,
+    hover_state: Res<HoverState>,
     view_model: Option<Res<GameViewModel>>,
     oracle_bundle: Option<Res<OracleBundle>>,
     mut examine_panel: Query<&mut Visibility, With<ExaminePanel>>,
     mut examine_text: Query<(&ExamineText, &mut Text)>,
 ) {
-    // Toggle visibility based on examine mode
-    if let Ok(mut visibility) = examine_panel.get_single_mut() {
-        *visibility = if *input_mode == InputMode::Examine {
-            Visibility::Visible
-        } else {
-            Visibility::Hidden
-        };
-    }
-
-    // Only update content if in examine mode
-    if *input_mode != InputMode::Examine {
+    let Some(hover_pos) = hover_state.position else {
+        // Hide panel when not hovering over map
+        if let Ok(mut visibility) = examine_panel.get_single_mut() {
+            *visibility = Visibility::Hidden;
+        }
         return;
+    };
+
+    // Show panel when hovering
+    if let Ok(mut visibility) = examine_panel.get_single_mut() {
+        *visibility = Visibility::Visible;
     }
 
     let Some(view_model) = view_model else {
@@ -464,55 +452,45 @@ pub fn update_examine_panel(
         return;
     };
 
-    // Get tile info at cursor position
-    let pos = cursor_state.position;
+    // Get tile info at hover position
     let map_oracle = oracle_bundle.0.map.as_ref();
-
-    let tile_info = map_oracle.tile(pos);
+    let tile_info = map_oracle.tile(hover_pos);
     let terrain_name = tile_info
         .map(|t| format!("{:?}", t.terrain()))
         .unwrap_or_else(|| "Void".to_string());
-    let passable = tile_info
-        .map(|t| if t.is_passable() { "Yes" } else { "No" })
-        .unwrap_or("No");
-
-    // Check for entity at cursor
-    let entity_at_cursor = cursor_state.get_entity_at_cursor(&view_model.0);
 
     // Build display lines
     let mut lines: Vec<String> = vec![
-        format!("Position: ({}, {})", pos.x, pos.y),
-        format!("Terrain: {}", terrain_name),
-        format!("Passable: {}", passable),
-        String::new(), // separator
+        format!("({}, {}) - {}", hover_pos.x, hover_pos.y, terrain_name),
     ];
 
-    match entity_at_cursor {
-        Some(crate::cursor::CursorTarget::Actor(actor)) => {
-            let (hp_cur, hp_max) = actor.stats.hp();
-            let entity_type = if actor.is_player { "Player" } else { "NPC" };
-            lines.push(format!("Entity: {}", entity_type));
-            lines.push(format!("HP: {}/{}", hp_cur, hp_max));
-            lines.push(format!("Speed: {}", actor.stats.speed.physical));
-            lines.push(format!("ID: {:?}", actor.id));
+    // Add entity info if hovering over something
+    match &hover_state.target {
+        Some(HoverTarget::Actor { id, is_player }) => {
+            // Find the actor in view model
+            if let Some(actor) = view_model.0.actors.iter().find(|a| a.id == *id) {
+                let (hp_cur, hp_max) = actor.stats.hp();
+                let entity_type = if *is_player { "Player" } else { "Enemy" };
+                lines.push(entity_type.to_string());
+                lines.push(format!("HP: {}/{}", hp_cur, hp_max));
+                lines.push(format!("Speed: {}", actor.stats.speed.physical));
+            }
         }
-        Some(crate::cursor::CursorTarget::Item(item)) => {
-            lines.push("Entity: Item".to_string());
-            lines.push(format!("Handle: {}", item.handle.0));
-            lines.push(format!("ID: {:?}", item.id));
-            lines.push(String::new());
+        Some(HoverTarget::Item { id }) => {
+            if let Some(item) = view_model.0.items.iter().find(|i| i.id == *id) {
+                lines.push("Item".to_string());
+                lines.push(format!("Handle: {}", item.handle.0));
+            }
         }
-        Some(crate::cursor::CursorTarget::Prop(prop)) => {
-            lines.push("Entity: Prop".to_string());
-            lines.push(format!("Kind: {:?}", prop.kind));
-            lines.push(format!("Active: {}", if prop.is_active { "Yes" } else { "No" }));
-            lines.push(format!("ID: {:?}", prop.id));
+        Some(HoverTarget::Prop { id }) => {
+            if let Some(prop) = view_model.0.props.iter().find(|p| p.id == *id) {
+                lines.push("Prop".to_string());
+                lines.push(format!("Kind: {:?}", prop.kind));
+                lines.push(format!("Active: {}", if prop.is_active { "Yes" } else { "No" }));
+            }
         }
         None => {
-            lines.push("Entity: None".to_string());
-            lines.push(String::new());
-            lines.push(String::new());
-            lines.push(String::new());
+            // Just show terrain info
         }
     }
 

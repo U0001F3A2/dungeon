@@ -17,5 +17,5 @@ mod ui;
 
 pub use app::BevyFrontend;
 pub use assets::SpriteAssets;
-pub use cursor::{CursorPlugin, CursorState};
+pub use cursor::{CursorPlugin, CursorState, HoverState, HoverTarget};
 pub use provider::BevyActionProvider;

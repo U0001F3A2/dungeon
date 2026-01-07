@@ -13,7 +13,7 @@ impl Plugin for InputPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<InputMode>()
             .init_resource::<ShowHelp>()
-            .add_systems(Update, (handle_keyboard_input, toggle_help, handle_examine_input));
+            .add_systems(Update, (handle_keyboard_input, toggle_help));
     }
 }
 
@@ -25,7 +25,6 @@ pub enum InputMode {
     /// Attack mode - use cursor to select target, Enter to confirm
     Attack,
     Pickup,
-    Examine,
 }
 
 /// Whether to show the help overlay.
@@ -47,26 +46,6 @@ fn handle_keyboard_input(
     let Some(view_model) = view_model else {
         return;
     };
-
-    // Toggle examine mode with X
-    if keys.just_pressed(KeyCode::KeyX) {
-        if *input_mode == InputMode::Examine {
-            *input_mode = InputMode::Normal;
-            cursor_state.visible = false;
-        } else {
-            *input_mode = InputMode::Examine;
-            cursor_state.visible = true;
-            // Initialize cursor at player position
-            if let Some(player_pos) = view_model.0.player.position {
-                cursor_state.init_at_player(
-                    player_pos,
-                    view_model.0.map.width,
-                    view_model.0.map.height,
-                );
-            }
-        }
-        return;
-    }
 
     // Handle attack mode
     if *input_mode == InputMode::Attack {
@@ -112,11 +91,6 @@ fn handle_keyboard_input(
             cursor_state.visible = false;
         }
 
-        return;
-    }
-
-    // In examine mode, don't process game actions
-    if *input_mode == InputMode::Examine {
         return;
     }
 
@@ -167,7 +141,6 @@ fn handle_keyboard_input(
                 ActionKind::PickupItem,
                 ActionInput::Direction(dir),
             )),
-            InputMode::Examine => return, // Handled in handle_examine_input
         };
 
         // Reset to normal mode after action
@@ -179,8 +152,8 @@ fn handle_keyboard_input(
         }
     }
 
-    // Wait action with period only (space is used for attack confirm)
-    if keys.just_pressed(KeyCode::Period) {
+    // Wait action with period or space (when not in attack mode)
+    if keys.just_pressed(KeyCode::Period) || keys.just_pressed(KeyCode::Space) {
         let action = Action::Character(CharacterAction::new(
             EntityId::PLAYER,
             ActionKind::Wait,
@@ -216,31 +189,6 @@ fn find_attackable_target(
     }
 
     None
-}
-
-/// Handle cursor movement in examine mode.
-fn handle_examine_input(
-    keys: Res<ButtonInput<KeyCode>>,
-    input_mode: Res<InputMode>,
-    mut cursor_state: ResMut<CursorState>,
-) {
-    if *input_mode != InputMode::Examine {
-        return;
-    }
-
-    // Move cursor with arrow keys
-    if keys.just_pressed(KeyCode::ArrowUp) {
-        cursor_state.move_by(0, 1);
-    }
-    if keys.just_pressed(KeyCode::ArrowDown) {
-        cursor_state.move_by(0, -1);
-    }
-    if keys.just_pressed(KeyCode::ArrowRight) {
-        cursor_state.move_by(1, 0);
-    }
-    if keys.just_pressed(KeyCode::ArrowLeft) {
-        cursor_state.move_by(-1, 0);
-    }
 }
 
 /// Toggle help overlay with H or F1.
