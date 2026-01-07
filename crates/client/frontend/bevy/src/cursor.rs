@@ -1,8 +1,7 @@
-//! Cursor and hover systems for tile examination and target selection.
+//! Cursor and hover systems for tile examination.
 //!
-//! Provides:
-//! - Mouse hover detection for examining tiles/entities
-//! - Keyboard cursor for attack target selection
+//! Provides mouse hover detection for examining tiles/entities.
+//! Attack targeting is handled via context menu (right-click).
 
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
@@ -11,58 +10,13 @@ use game_core::Position;
 use crate::components::MainCamera;
 use crate::resources::{GameViewModel, TileSize};
 
-/// Plugin for cursor and hover systems.
+/// Plugin for hover systems.
 pub struct CursorPlugin;
 
 impl Plugin for CursorPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<CursorState>()
-            .init_resource::<HoverState>()
-            .add_systems(Startup, spawn_cursor)
-            .add_systems(Update, (
-                update_hover_position,
-                update_cursor_position,
-                update_cursor_visibility,
-            ));
-    }
-}
-
-/// Keyboard cursor state for attack targeting.
-#[derive(Resource)]
-pub struct CursorState {
-    /// Current cursor position in world grid coordinates.
-    pub position: Position,
-    /// Whether the cursor is currently visible (attack mode active).
-    pub visible: bool,
-    /// Map dimensions for bounds checking.
-    pub map_width: u32,
-    pub map_height: u32,
-}
-
-impl Default for CursorState {
-    fn default() -> Self {
-        Self {
-            position: Position::new(0, 0),
-            visible: false,
-            map_width: 20,
-            map_height: 20,
-        }
-    }
-}
-
-impl CursorState {
-    /// Initialize cursor at player position.
-    pub fn init_at_player(&mut self, player_pos: Position, map_width: u32, map_height: u32) {
-        self.position = player_pos;
-        self.map_width = map_width;
-        self.map_height = map_height;
-    }
-
-    /// Move cursor by delta, clamped to map bounds.
-    pub fn move_by(&mut self, dx: i32, dy: i32) {
-        let new_x = (self.position.x + dx).clamp(0, self.map_width as i32 - 1);
-        let new_y = (self.position.y + dy).clamp(0, self.map_height as i32 - 1);
-        self.position = Position::new(new_x, new_y);
+        app.init_resource::<HoverState>()
+            .add_systems(Update, update_hover_position);
     }
 }
 
@@ -78,9 +32,16 @@ pub struct HoverState {
 /// What the mouse is hovering over.
 #[derive(Clone, Debug)]
 pub enum HoverTarget {
-    Actor { id: game_core::EntityId, is_player: bool },
-    Item { id: game_core::EntityId },
-    Prop { id: game_core::EntityId },
+    Actor {
+        id: game_core::EntityId,
+        is_player: bool,
+    },
+    Item {
+        id: game_core::EntityId,
+    },
+    Prop {
+        id: game_core::EntityId,
+    },
 }
 
 impl HoverState {
@@ -120,25 +81,6 @@ impl HoverState {
 
         self.target = None;
     }
-}
-
-/// Marker component for the attack cursor sprite.
-#[derive(Component)]
-pub struct CursorSprite;
-
-/// Spawn the attack cursor sprite (initially hidden).
-fn spawn_cursor(mut commands: Commands) {
-    // Create a simple colored square for the attack cursor
-    commands.spawn((
-        Sprite {
-            color: Color::srgba(1.0, 0.3, 0.3, 0.6), // Semi-transparent red for attack
-            custom_size: Some(Vec2::splat(32.0)),
-            ..default()
-        },
-        Transform::from_xyz(0.0, 0.0, 10.0), // High Z to render on top
-        Visibility::Hidden,
-        CursorSprite,
-    ));
 }
 
 /// Update hover position from mouse cursor.
@@ -207,52 +149,4 @@ fn update_hover_position(
         hover_state.position = None;
         hover_state.target = None;
     }
-}
-
-/// Update attack cursor sprite position to match cursor state.
-fn update_cursor_position(
-    cursor_state: Res<CursorState>,
-    tile_size: Res<TileSize>,
-    view_model: Option<Res<GameViewModel>>,
-    mut cursor_query: Query<&mut Transform, With<CursorSprite>>,
-) {
-    let Some(view_model) = view_model else {
-        return;
-    };
-
-    let Ok(mut transform) = cursor_query.get_single_mut() else {
-        return;
-    };
-
-    let map = &view_model.0.map;
-    let tile_px = tile_size.0;
-
-    // Calculate offset (same as tile rendering)
-    let map_width = map.width as f32 * tile_px;
-    let map_height = map.height as f32 * tile_px;
-    let offset_x = -map_width / 2.0 + tile_px / 2.0;
-    let offset_y = -map_height / 2.0 + tile_px / 2.0;
-
-    // Convert grid position to world position
-    let world_x = cursor_state.position.x as f32 * tile_px + offset_x;
-    let world_y = cursor_state.position.y as f32 * tile_px + offset_y;
-
-    transform.translation.x = world_x;
-    transform.translation.y = world_y;
-}
-
-/// Update attack cursor visibility based on state.
-fn update_cursor_visibility(
-    cursor_state: Res<CursorState>,
-    mut cursor_query: Query<&mut Visibility, With<CursorSprite>>,
-) {
-    let Ok(mut visibility) = cursor_query.get_single_mut() else {
-        return;
-    };
-
-    *visibility = if cursor_state.visible {
-        Visibility::Visible
-    } else {
-        Visibility::Hidden
-    };
 }

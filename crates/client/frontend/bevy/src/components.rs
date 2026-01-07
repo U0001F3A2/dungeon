@@ -74,7 +74,3 @@ pub struct MessageEntry {
 /// Marker component for help panel.
 #[derive(Component)]
 pub struct HelpPanel;
-
-/// Marker component for input mode text.
-#[derive(Component)]
-pub struct InputModeText;

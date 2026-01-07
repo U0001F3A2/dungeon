@@ -7,6 +7,7 @@
 mod app;
 mod assets;
 mod components;
+mod context_menu;
 mod cursor;
 mod events;
 mod input;
@@ -17,5 +18,6 @@ mod ui;
 
 pub use app::BevyFrontend;
 pub use assets::SpriteAssets;
-pub use cursor::{CursorPlugin, CursorState, HoverState, HoverTarget};
+pub use context_menu::{ContextMenuPlugin, ContextMenuState};
+pub use cursor::{CursorPlugin, HoverState, HoverTarget};
 pub use provider::BevyActionProvider;

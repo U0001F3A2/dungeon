@@ -69,10 +69,12 @@ pub fn spawn_props(
 }
 
 /// Update prop sprites when their state changes.
+/// Also despawns props that were destroyed (no longer in view model).
 pub fn update_prop_states(
+    mut commands: Commands,
     view_model: Option<Res<GameViewModel>>,
     sprites: Option<Res<SpriteAssets>>,
-    mut props: Query<(&Prop, &mut Sprite)>,
+    mut props: Query<(Entity, &Prop, &mut Sprite)>,
 ) {
     let Some(view_model) = view_model else {
         return;
@@ -86,7 +88,7 @@ pub fn update_prop_states(
         return;
     }
 
-    for (prop_component, mut sprite) in props.iter_mut() {
+    for (entity, prop_component, mut sprite) in props.iter_mut() {
         // Find the prop in the view model
         if let Some(prop_view) = view_model
             .0
@@ -96,6 +98,9 @@ pub fn update_prop_states(
         {
             // Update sprite based on current state
             sprite.image = sprites.prop_sprite(&prop_view.kind, prop_view.is_active);
+        } else {
+            // Prop was destroyed - despawn the entity
+            commands.entity(entity).despawn();
         }
     }
 }

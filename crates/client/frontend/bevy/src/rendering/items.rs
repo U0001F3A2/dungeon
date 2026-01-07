@@ -72,10 +72,12 @@ pub fn spawn_items(
 }
 
 /// Update item positions when the view model changes.
+/// Also despawns items that were picked up (no longer in view model).
 pub fn update_item_positions(
+    mut commands: Commands,
     view_model: Option<Res<GameViewModel>>,
     tile_size: Res<TileSize>,
-    mut items: Query<(&Item, &mut Transform)>,
+    items: Query<(Entity, &Item, &Transform)>,
 ) {
     let Some(view_model) = view_model else {
         return;
@@ -93,7 +95,7 @@ pub fn update_item_positions(
     let offset_x = -map_width / 2.0 + tile_px / 2.0;
     let offset_y = -map_height / 2.0 + tile_px / 2.0;
 
-    for (item_component, mut transform) in items.iter_mut() {
+    for (entity, item_component, transform) in items.iter() {
         // Find the item in the view model
         if let Some(item_view) = view_model
             .0
@@ -103,8 +105,20 @@ pub fn update_item_positions(
         {
             let world_x = item_view.position.x as f32 * tile_px + offset_x;
             let world_y = item_view.position.y as f32 * tile_px + offset_y;
-            transform.translation.x = world_x;
-            transform.translation.y = world_y;
+
+            // Only update if position changed
+            if (transform.translation.x - world_x).abs() > 0.01
+                || (transform.translation.y - world_y).abs() > 0.01
+            {
+                commands.entity(entity).insert(Transform::from_xyz(
+                    world_x,
+                    world_y,
+                    transform.translation.z,
+                ));
+            }
+        } else {
+            // Item was picked up - despawn the entity
+            commands.entity(entity).despawn();
         }
     }
 }

@@ -3,9 +3,9 @@
 use bevy::prelude::*;
 use game_core::env::MapOracle;
 
-use crate::components::{HealthText, HelpPanel, InputModeText, ManaText, MessageEntry, MessageLogPanel, StatsPanel, TurnText, UiRoot};
+use crate::components::{HealthText, HelpPanel, ManaText, MessageEntry, MessageLogPanel, StatsPanel, TurnText, UiRoot};
 use crate::cursor::{HoverState, HoverTarget};
-use crate::input::{InputMode, ShowHelp};
+use crate::input::ShowHelp;
 use crate::resources::{GameMessageLog, GameViewModel, OracleBundle};
 use super::styles::*;
 
@@ -122,32 +122,11 @@ fn spawn_stats_panel(parent: &mut ChildBuilder) {
 }
 
 fn spawn_center_ui(parent: &mut ChildBuilder) {
-    parent
-        .spawn(Node {
-            flex_grow: 1.0,
-            flex_direction: FlexDirection::Column,
-            align_items: AlignItems::Center,
-            ..default()
-        })
-        .with_children(|center| {
-            // Input mode indicator at top
-            center.spawn((
-                Node {
-                    padding: UiRect::all(Val::Px(8.0)),
-                    margin: UiRect::all(Val::Px(10.0)),
-                    ..default()
-                },
-                BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.7)),
-            ))
-            .with_children(|mode_box| {
-                mode_box.spawn((
-                    Text::new("MOVE"),
-                    text_style(TEXT_FONT_SIZE, Color::srgb(0.0, 1.0, 0.0)).0,
-                    text_style(TEXT_FONT_SIZE, Color::srgb(0.0, 1.0, 0.0)).1,
-                    InputModeText,
-                ));
-            });
-        });
+    // Center spacer to push right panel to the edge
+    parent.spawn(Node {
+        flex_grow: 1.0,
+        ..default()
+    });
 }
 
 fn spawn_right_column(parent: &mut ChildBuilder) {
@@ -287,12 +266,7 @@ fn spawn_help_panel(commands: &mut Commands) {
                 text_style(TEXT_FONT_SIZE, Color::srgb(0.7, 0.9, 1.0)).1,
             ));
             panel.spawn((
-                Text::new("  A - Attack (select target)"),
-                text_style(SMALL_FONT_SIZE, TEXT_COLOR).0,
-                text_style(SMALL_FONT_SIZE, TEXT_COLOR).1,
-            ));
-            panel.spawn((
-                Text::new("  G + Arrow - Pickup item"),
+                Text::new("  G - Pickup item"),
                 text_style(SMALL_FONT_SIZE, TEXT_COLOR).0,
                 text_style(SMALL_FONT_SIZE, TEXT_COLOR).1,
             ));
@@ -310,6 +284,11 @@ fn spawn_help_panel(commands: &mut Commands) {
             ));
             panel.spawn((
                 Text::new("  Hover - Inspect tile"),
+                text_style(SMALL_FONT_SIZE, TEXT_COLOR).0,
+                text_style(SMALL_FONT_SIZE, TEXT_COLOR).1,
+            ));
+            panel.spawn((
+                Text::new("  Right-click - Actions menu"),
                 text_style(SMALL_FONT_SIZE, TEXT_COLOR).0,
                 text_style(SMALL_FONT_SIZE, TEXT_COLOR).1,
             ));
@@ -390,22 +369,6 @@ pub fn update_message_log(
         } else {
             **text = String::new();
         }
-    }
-}
-
-/// Update the input mode indicator.
-pub fn update_input_mode(
-    input_mode: Res<InputMode>,
-    mut mode_text: Query<(&mut Text, &mut TextColor), With<InputModeText>>,
-) {
-    if let Ok((mut text, mut color)) = mode_text.get_single_mut() {
-        let (label, new_color) = match *input_mode {
-            InputMode::Normal => ("MOVE", Color::srgb(0.0, 1.0, 0.0)),
-            InputMode::Attack => ("ATTACK", Color::srgb(1.0, 0.3, 0.3)),
-            InputMode::Pickup => ("PICKUP", Color::srgb(0.3, 0.7, 1.0)),
-        };
-        **text = label.to_string();
-        color.0 = new_color;
     }
 }
 

@@ -14,6 +14,7 @@ use runtime::{InteractiveKind, ProviderKind, RuntimeHandle, Topic};
 use std::sync::Arc;
 use tokio::sync::mpsc;
 
+use crate::context_menu::ContextMenuPlugin;
 use crate::cursor::CursorPlugin;
 use crate::events::{RuntimeEventReceivers, RuntimeEventsPlugin};
 use crate::input::InputPlugin;
@@ -123,6 +124,7 @@ impl client_frontend_core::Frontend for BevyFrontend {
             .add_plugins(UiPlugin)
             .add_plugins(InputPlugin)
             .add_plugins(CursorPlugin)
+            .add_plugins(ContextMenuPlugin)
             .add_plugins(RuntimeEventsPlugin)
             // Run
             .run();

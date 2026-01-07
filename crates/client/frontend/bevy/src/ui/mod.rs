@@ -16,7 +16,6 @@ impl Plugin for UiPlugin {
             .add_systems(Update, (
                 update_stats_panel,
                 update_message_log,
-                update_input_mode,
                 update_help_visibility,
                 update_examine_panel,
             ));

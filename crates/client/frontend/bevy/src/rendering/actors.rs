@@ -81,10 +81,12 @@ pub fn spawn_actors(
 }
 
 /// Update actor positions when the view model changes.
+/// Also despawns actors that were killed (no longer in view model).
 pub fn update_actor_positions(
+    mut commands: Commands,
     view_model: Option<Res<GameViewModel>>,
     tile_size: Res<TileSize>,
-    mut actors: Query<(&Actor, &mut Transform)>,
+    actors: Query<(Entity, &Actor, &Transform)>,
 ) {
     let Some(view_model) = view_model else {
         return;
@@ -102,19 +104,34 @@ pub fn update_actor_positions(
     let offset_x = -map_width / 2.0 + tile_px / 2.0;
     let offset_y = -map_height / 2.0 + tile_px / 2.0;
 
-    for (actor_component, mut transform) in actors.iter_mut() {
-        // Find the actor in the view model and get its position
-        if let Some(pos) = view_model
+    for (entity, actor_component, transform) in actors.iter() {
+        // Find the actor in the view model
+        let actor_view = view_model
             .0
             .actors
             .iter()
-            .find(|a| a.id == actor_component.entity_id)
-            .and_then(|a| a.position)
-        {
-            let world_x = pos.x as f32 * tile_px + offset_x;
-            let world_y = pos.y as f32 * tile_px + offset_y;
-            transform.translation.x = world_x;
-            transform.translation.y = world_y;
+            .find(|a| a.id == actor_component.entity_id);
+
+        match actor_view.and_then(|a| a.position) {
+            Some(pos) => {
+                let world_x = pos.x as f32 * tile_px + offset_x;
+                let world_y = pos.y as f32 * tile_px + offset_y;
+
+                // Only update if position changed significantly
+                if (transform.translation.x - world_x).abs() > 0.01
+                    || (transform.translation.y - world_y).abs() > 0.01
+                {
+                    commands.entity(entity).insert(Transform::from_xyz(
+                        world_x,
+                        world_y,
+                        transform.translation.z,
+                    ));
+                }
+            }
+            None => {
+                // Actor was killed or has no position - despawn the entity
+                commands.entity(entity).despawn();
+            }
         }
     }
 }
